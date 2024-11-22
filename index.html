@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema CRUD de Veículos - Login</title>
+    <style>
+        /* Estilo geral */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+        }
+
+        /* Estilo específico para tela de login */
+        .login-container {
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            width: 300px;
+            margin: 50px auto;
+            text-align: center;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+            text-align: left;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 14px;
+            color: #555;
+        }
+
+        input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px;
+            width: 100%;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        .links {
+            margin-top: 15px;
+            font-size: 14px;
+        }
+
+        .links a {
+            color: #007BFF;
+            text-decoration: none;
+        }
+
+        .links a:hover {
+            text-decoration: underline;
+        }
+
+        .error {
+            color: red;
+            font-size: 14px;
+            margin-top: 10px;
+        }
+
+        /* Estilo para a página de veículos */
+        .form-container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        th {
+            background-color: #f8f9fa;
+            color: #333;
+        }
+
+        .action-buttons button {
+            margin-right: 5px;
+        }
+
+        .btn-edit {
+            background-color: #ffc107;
+        }
+
+        .btn-delete {
+            background-color: #dc3545;
+        }
+    </style>
+</head>
+<body>
+    <!-- Tela de Login -->
+    <div id="loginPage" class="login-container">
+        <h1>Login</h1>
+        <form id="loginForm">
+            <div class="form-group">
+                <label for="username">Usuário</label>
+                <input type="text" id="username" name="username" required>
+            </div>
+            <div class="form-group">
+                <label for="password">Senha</label>
+                <input type="password" id="password" name="password" required>
+            </div>
+            <button type="submit">Entrar</button>
+            <div id="errorMessage" class="error"></div>
+        </form>
+        <div class="links">
+            <a href="#">Cadastrar Usuário</a> | 
+            <a href="#">Esqueci Minha Senha</a>
+        </div>
+    </div>
+
+    <!-- Página de Cadastro de Veículos -->
+    <div id="vehiclePage" class="container" style="display: none;">
+        <h1>Gerenciamento de Veículos</h1>
+        <div class="form-container">
+            <form id="vehicleForm">
+                <div class="form-group">
+                    <label for="marca">Marca:</label>
+                    <input type="text" id="marca" name="marca" required>
+                </div>
+                <div class="form-group">
+                    <label for="modelo">Modelo:</label>
+                    <input type="text" id="modelo" name="modelo" required>
+                </div>
+                <div class="form-group">
+                    <label for="ano">Ano:</label>
+                    <input type="number" id="ano" name="ano" min="1900" max="2024" required>
+                </div>
+                <div class="form-group">
+                    <label for="placa">Placa:</label>
+                    <input type="text" id="placa" name="placa" required>
+                </div>
+                <button type="submit" id="submitBtn">Adicionar Veículo</button>
+                <div id="formError" class="error"></div>
+            </form>
+        </div>
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Marca</th>
+                        <th>Modelo</th>
+                        <th>Ano</th>
+                        <th>Placa</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody id="vehicleList"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        const validUsers = {
+            'admin': 'admin123',
+            'usuario': 'senha123'
+        };
+
+        document.getElementById('loginForm').addEventListener('submit', function (e) {
+            e.preventDefault();
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            if (validUsers[username] && validUsers[username] === password) {
+                document.getElementById('loginPage').style.display = 'none';
+                document.getElementById('vehiclePage').style.display = 'block';
+            } else {
+                document.getElementById('errorMessage').textContent = 'Usuário ou senha inválidos!';
+            }
+        });
+
+        class VehicleManager {
+            constructor() {
+                this.vehicles = [];
+                this.editingIndex = -1;
+                this.setupEventListeners();
+            }
+
+            setupEventListeners() {
+                const form = document.getElementById('vehicleForm');
+                form.addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    this.handleFormSubmit();
+                });
+            }
+
+            handleFormSubmit() {
+                const marca = document.getElementById('marca').value;
+                const modelo = document.getElementById('modelo').value;
+                const ano = document.getElementById('ano').value;
+                const placa = document.getElementById('placa').value;
+
+                const vehicle = { marca, modelo, ano, placa };
+
+                if (this.editingIndex === -1) {
+                    this.addVehicle(vehicle);
+                } else {
+                    this.updateVehicle(this.editingIndex, vehicle);
+                    this.editingIndex = -1;
+                    document.getElementById('submitBtn').textContent = 'Adicionar Veículo';
+                }
+
+                this.clearForm();
+                this.renderVehicles();
+            }
+
+            addVehicle(vehicle) {
+                this.vehicles.push(vehicle);
+            }
+
+            updateVehicle(index, vehicle) {
+                this.vehicles[index] = vehicle;
+            }
+
+            deleteVehicle(index) {
+                this.vehicles.splice(index, 1);
+                this.renderVehicles();
+            }
+
+            editVehicle(index) {
+                const vehicle = this.vehicles[index];
+                document.getElementById('marca').value = vehicle.marca;
+                document.getElementById('modelo').value = vehicle.modelo;
+                document.getElementById('ano').value = vehicle.ano;
+                document.getElementById('placa').value = vehicle.placa;
+
+                this.editingIndex = index;
+                document.getElementById('submitBtn').textContent = 'Atualizar Veículo';
+            }
+
+            clearForm() {
+                document.getElementById('vehicleForm').reset();
+            }
+
+            renderVehicles() {
+                const tbody = document.getElementById('vehicleList');
+                tbody.innerHTML = '';
+                this.vehicles.forEach((vehicle, index) => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${vehicle.marca}</td>
+                        <td>${vehicle.modelo}</td>
+                        <td>${vehicle.ano}</td>
+                        <td>${vehicle.placa}</td>
+                        <td>
+                            <button class="btn-edit" onclick="vehicleManager.editVehicle(${index})">Editar</button>
+                            <button class="btn-delete" onclick="vehicleManager.deleteVehicle(${index})">Excluir</button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            }
+        }
+
+        const vehicleManager = new VehicleManager();
+    </script>
+</body>
+</html>
